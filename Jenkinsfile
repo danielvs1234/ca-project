@@ -39,7 +39,7 @@ pipeline {
             }
           steps{
             unstash 'code'
-            sh 'docker build -t ${DOCKER_USER}/codechan .'
+            sh 'docker build -t ${DOCKER_USER}/codechan:latest -t ${DOCKER_USER}/codechan:dev .'
             sh 'docker image ls'            
           }
         }
