@@ -40,8 +40,7 @@ pipeline {
           steps{
             unstash 'code'
             sh 'docker build -t ${DOCKER_USER}/codechan .'
-            sh 'docker image ls'
-            
+            sh 'docker image ls'            
           }
         }
       }
@@ -56,19 +55,20 @@ pipeline {
             skipDefaultCheckout()
         }
       steps{
-        sh 'ls'
+        unstash 'code'
         sh 'pip install -r requirements.txt'
         sh 'python tests.py'
       }
     }
 
+stage ("deploy"){
+parallel{
     stage('push to docker if master'){
       when {branch "master"}
         environment {
           DOCKERCREDS = credentials('docker-login')
         }
         steps {
-            unstash 'code' //unstash the repository code
             sh 'echo "$DOCKERCREDS_PSW" | docker login -u "$DOCKERCREDS_USR" --password-stdin' //login to docker hub with the credentials above
             sh 'docker push "$DOCKER_USER/codechan:latest"'
         }
@@ -81,11 +81,11 @@ pipeline {
           DOCKERCREDS = credentials('docker-login')
         }
         steps {
-            unstash 'code' //unstash the repository code
             sh 'echo "$DOCKERCREDS_PSW" | docker login -u "$DOCKERCREDS_USR" --password-stdin' //login to docker hub with the credentials above
             sh 'docker push "$DOCKER_USER/codechan:dev"'
         }
     }
+    }}
     
     stage('deploy on server'){
       steps{
