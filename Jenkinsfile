@@ -41,7 +41,6 @@ pipeline {
             unstash 'code'
             sh 'docker build -t ${DOCKER_USER}/codechan .'
             sh 'docker image ls'
-            stash 'docker image code'
             
           }
         }
@@ -103,7 +102,6 @@ pipeline {
                     sshCommand remote: remote, command: 'docker container run -p 80:5000 -d d0wnt0wn3d/codechan:latest'
                     
                 }else{
-                    unstash 'docker image code'
                     remote.name = 'danielMachine'
                     remote.host = '34.76.179.88'
                     remote.allowAnyHosts = true
