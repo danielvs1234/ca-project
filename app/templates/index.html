@@ -11,9 +11,9 @@
     <form action="" method="post" name="post">
         {{ form.hidden_tag() }}
         
-        {{ form.user_name(size=30, maxlength=140) }}<br />
-        {{ form.title(size=30, maxlength=140) }}<br />
-        {{ form.body(size=30, maxlength=140) }}<br />
+        Username: {{ form.user_name(size=30, maxlength=140) }}<br />
+        Topic: {{ form.title(size=30, maxlength=140) }}<br />
+        Message: {{ form.body(size=30, maxlength=140) }}<br />
         <br />
         <input type="submit" value="Post!"></br>
     </form>
