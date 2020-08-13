@@ -41,7 +41,7 @@ pipeline {
             unstash 'code'
             sh 'docker build -t ${DOCKER_USER}/codechan .'
             sh 'docker image ls'
-            
+            stash 'docker image code'
             
           }
         }
@@ -63,7 +63,7 @@ pipeline {
       }
     }
 
-    stage('push to docker'){
+    stage('push to docker if master'){
       when {branch "master"}
         environment {
           DOCKERCREDS = credentials('docker-login')
@@ -72,26 +72,50 @@ pipeline {
             unstash 'code' //unstash the repository code
             sh 'echo "$DOCKERCREDS_PSW" | docker login -u "$DOCKERCREDS_USR" --password-stdin' //login to docker hub with the credentials above
             sh 'docker push "$DOCKER_USER/codechan:latest"'
-            sh 'echo "this is requested from develop branch!"'
+        }
+        
+    }
+    
+    stage('push to docker if develop'){
+        when{not{branch "master"}}
+        environment {
+          DOCKERCREDS = credentials('docker-login')
+        }
+        steps {
+            unstash 'code' //unstash the repository code
+            sh 'echo "$DOCKERCREDS_PSW" | docker login -u "$DOCKERCREDS_USR" --password-stdin' //login to docker hub with the credentials above
+            sh 'docker push "$DOCKER_USER/codechan:dev"'
         }
     }
     
     stage('deploy on server'){
-       
-            
       steps{
-        script{
-            withCredentials([sshUserPrivateKey(credentialsId: 'testkey', keyFileVariable: 'identity', passphraseVariable: '', usernameVariable: 'username')]) {
-            def remote =[:]
-            remote.name = 'sharankaMachine'
-            remote.host = '35.195.199.29'
-            remote.allowAnyHosts = true
-            remote.user = username
-            remote.identityFile = identity
-            sshCommand remote: remote, command: 'docker stop $(docker ps -a -q)'
-            sshCommand remote: remote, command: 'docker container run -p 80:5000 -d d0wnt0wn3d/codechan'
-            }
-        }
+            script{
+                withCredentials([sshUserPrivateKey(credentialsId: 'testkey', keyFileVariable: 'identity', passphraseVariable: '', usernameVariable: 'username')]) {
+                def remote =[:]
+                if(env.BRANCH_NAME == 'master'){
+                    remote.name = 'sharankaMachine'
+                    remote.host = '35.195.199.29'
+                    remote.allowAnyHosts = true
+                    remote.user = username
+                    remote.identityFile = identity
+                    sshCommand remote: remote, command: 'docker stop $(docker ps -a -q)'
+                    sshCommand remote: remote, command: 'docker container run -p 80:5000 -d d0wnt0wn3d/codechan:latest'
+                    
+                }else{
+                    unstash 'docker image code'
+                    remote.name = 'danielMachine'
+                    remote.host = '34.76.179.88'
+                    remote.allowAnyHosts = true
+                    remote.user = username
+                    remote.identityFile = identity
+                    sshCommand remote: remote, command: 'docker stop $(docker ps -a -q)'
+                    sshCommand remote: remote, command: 'docker container run -p 80:5000 -d d0wnt0wn3d/codechan:dev'
+                }
+                
+                }
+         }
+        
         }
      }
     }
